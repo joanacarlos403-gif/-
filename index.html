@@ -103,7 +103,7 @@
             <p style="text-align:center; color:#ccc; margin-top:100px;">← 请在左侧录入数据</p>
         </div>
         <div class="footer">
-            <p>提示：请遵医嘱服药。扫码查阅详情。若服药后出现皮疹、出血等，请立即就医。</p>
+            <p>提示：请遵医嘱服药。扫码查阅详情。若服药后出现不适，请立即就医。</p>
             <div class="sign-area">
                 <span id="v-date">日期：2026年1月30日</span>
                 <div style="text-align:right; font-weight:bold;">介入与血管外科<br>药学部</div>
@@ -217,30 +217,7 @@
         new QRious({ element: document.getElementById('share-qr'), value: shareUrl, size: 250, level: 'H' });
     }
 
-    init()
-    function init() {
-    // 1. 先渲染基本的药物选择器，保证页面不白屏
-    const box = document.getElementById('selector');
-    if(box) {
-        box.innerHTML = ''; // 清空旧内容
-        drugDb.forEach(d => {
-            // ... 你的渲染代码 ...
-        });
-    }
-
-    // 2. 再尝试解析 URL 参数
-    try {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('name')) {
-            // 执行自动填充逻辑...
-        }
-    } catch (e) {
-        console.log("参数解析失败，进入普通录入模式");
-    }
-    
-    // 3. 最后执行一次 draw 确保界面更新
-    draw();
-}
+    init();
 </script>
 </body>
 </html>
