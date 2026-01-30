@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <meta charset="UTF-8">
     <title>甘肃省妇幼保健院-介入与血管外科用药助手</title>
     <style>
@@ -251,6 +252,89 @@
     }
 
     init();
+    function generateShareQR() {
+    // 1. 弹出遮罩层（确保你HTML里有id为qr-overlay的div）
+    const overlay = document.getElementById('qr-overlay');
+    if (!overlay) {
+        alert("请检查HTML中是否已添加qr-overlay弹窗代码");
+        return;
+    }
+    overlay.style.display = 'flex';
+
+    // 2. 采集患者基本信息
+    const name = document.getElementById('p-name').value;
+    const bed = document.getElementById('p-bed').value;
+    const diag = document.getElementById('p-diag').value;
+    
+    // 3. 采集选中的药品及手动输入的剂量
+    let drugParams = [];
+    // 注意：这里的 drugDb 必须对应你定义的药品数据对象
+    drugDb.forEach(d => {
+        const check = document.getElementById('check-' + d.id);
+        const doseInput = document.getElementById('dose-' + d.id);
+        // 如果勾选了该药，则记录 ID 和 剂量
+        if (check && check.checked) {
+            const dose = encodeURIComponent(doseInput.value || "按医嘱");
+            drugParams.push(`${d.id}_${dose}`);
+        }
+    });
+
+    // 4. 构建带参数的专属 URL
+    // 格式如：https://xxx.github.io/med-edu/?name=张三&bed=01&diag=曲张&drugs=riv_10mg|ato_20mg
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?name=${encodeURIComponent(name)}&bed=${encodeURIComponent(bed)}&diag=${encodeURIComponent(diag)}&drugs=${drugParams.join('|')}`;
+
+    // 5. 调用 QRious 库绘制二维码
+    // 这里的 share-qr 对应 HTML 中的 canvas 标签
+    new QRious({
+        element: document.getElementById('share-qr'),
+        value: shareUrl,
+        size: 280,
+        level: 'H' // 高纠错级别，防止折射导致无法扫描
+    });
+}
 </script>
+<div id="qr-overlay" onclick="this.style.display='none'" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; flex-direction:column; align-items:center; justify-content:center; color:white;">
+    <div style="background:white; padding:20px; border-radius:15px; margin-bottom:20px;">
+        <canvas id="share-qr"></canvas>
+    </div>
+    <p style="font-size:18px; font-weight:bold;">请患者微信“扫一扫”</p>
+    <p style="font-size:14px; opacity:0.8;">扫描后内容将自动同步至患者手机</p>
+    <p style="font-size:12px; margin-top:10px;">(点击空白处关闭预览)</p>
+</div>
 </body>
 </html>
+// 页面加载完成后自动执行
+window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // 检查网址里是否有“name”这个参数
+    if (urlParams.has('name')) {
+        // 1. 自动填充基本信息
+        document.getElementById('p-name').value = urlParams.get('name');
+        document.getElementById('p-bed').value = urlParams.get('bed');
+        document.getElementById('p-diag').value = urlParams.get('diag');
+        
+        // 2. 自动勾选药品并填充剂量
+        const drugsData = urlParams.get('drugs');
+        if (drugsData) {
+            const items = drugsData.split('|');
+            items.forEach(item => {
+                const [id, dose] = item.split('_');
+                const check = document.getElementById('check-' + id);
+                if (check) {
+                    check.checked = true;
+                    // 触发界面显示逻辑
+                    document.getElementById('wrapper-' + id).classList.add('active');
+                    document.getElementById('dose-' + id).value = decodeURIComponent(dose);
+                }
+            });
+        }
+        
+        // 3. 渲染出宣教单并隐藏药师的左侧控制栏
+        draw(); 
+        document.querySelector('.no-print-area').style.display = 'none';
+        document.querySelector('.preview-container').style.margin = '0 auto';
+        document.title = "您的用药教育指导单";
+    }
+});
