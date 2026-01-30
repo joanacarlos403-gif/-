@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>甘肃省妇幼保健院-介入与血管外科用药助手</title>
+    <style>
+        /* 核心美化变量 */
+        :root { 
+            --primary: #005a96; 
+            --primary-light: #e6f0f7;
+            --accent: #d32f2f; 
+            --text-main: #2c3e50;
+            --bg-side: #ffffff;
+            --bg-main: #f4f7f9;
+        }
+
+        body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg-main); margin: 0; display: flex; color: var(--text-main); }
+
+        /* 左侧控制台美化 */
+        .no-print-area { 
+            width: 380px; padding: 25px; background: var(--bg-side); height: 100vh; 
+            position: fixed; left: 0; top: 0; box-shadow: 4px 0 15px rgba(0,0,0,0.05); 
+            overflow-y: auto; z-index: 100; border-right: 1px solid #e0e6ed;
+        }
+        h3 { color: var(--primary); margin-top: 0; font-size: 20px; border-left: 4px solid var(--primary); padding-left: 10px; }
+        .form-section { margin-bottom: 25px; }
+        label { font-size: 14px; color: #556677; font-weight: 600; display: block; margin-bottom: 8px; }
+        input { 
+            width: 100%; padding: 12px; border: 1px solid #dcdfe6; border-radius: 8px; 
+            box-sizing: border-box; font-size: 14px; transition: all 0.3s;
+        }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(0,90,150,0.1); }
+        
+        /* 药物列表交互美化 */
+        .drug-selector-item { 
+            margin-top: 12px; padding: 15px; background: #ffffff; border: 1px solid #eef2f6; 
+            border-radius: 10px; transition: all 0.2s; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .drug-selector-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .drug-checkbox { display: flex; align-items: center; font-weight: bold; color: var(--primary); font-size: 15px; }
+        .dosage-input-wrapper { margin-top: 12px; display: none; }
+        .dosage-input-wrapper.active { display: block; animation: slideDown 0.3s ease-out; }
+        .dosage-input { background: #fffcf0; border: 1px solid #f9e1a0; color: #856404; }
+
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 打印按钮 */
+        .btn-print { 
+            background: linear-gradient(135deg, var(--primary), #007bbd); color:white; border:none; 
+            padding: 16px; width:100%; border-radius:10px; cursor:pointer; font-weight:bold; 
+            font-size:16px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,90,150,0.3); transition: 0.3s;
+        }
+        .btn-print:hover { opacity: 0.9; transform: scale(1.02); }
+
+        /* 右侧 A4 纸模拟 */
+        .preview-container { margin-left: 380px; padding: 40px; width: calc(100% - 380px); display: flex; flex-direction: column; align-items: center; }
+        .a4-page { 
+            width: 210mm; min-height: 296mm; padding: 20mm 15mm; 
+            background: white; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            box-sizing: border-box; position: relative; border-radius: 2px;
+        }
+
+        /* 教育单排版美化 */
+        .header-box { text-align: center; border-bottom: 3px solid var(--primary); margin-bottom: 25px; padding-bottom: 15px; }
+        .hospital-logo { width: 220px; margin-bottom: 12px; }
+        .hospital-name { font-size: 22px; font-weight: bold; color: var(--primary); margin: 0; }
+        .doc-title { font-size: 28px; font-weight: 900; color: #333; margin: 12px 0; letter-spacing: 4px; }
+
+        .patient-bar { 
+            display: grid; grid-template-columns: 1.2fr 1.5fr 2fr; gap: 10px;
+            background: #f8fbfc; padding: 12px 20px; margin-bottom: 25px; 
+            font-weight: bold; font-size: 15px; border: 1px solid #e1e9ef; border-radius: 6px; 
+        }
+        
+        .drug-row { 
+            display: flex; align-items: flex-start; margin-bottom: 20px; 
+            padding: 20px; border: 1px solid #edf2f7; border-radius: 12px;
+            background: #ffffff; page-break-inside: avoid;
+        }
+        .drug-info-text { flex: 1; padding-right: 25px; }
+        .drug-title { font-size: 19px; color: var(--primary); font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; }
+        .drug-title::before { content: ""; width: 4px; height: 18px; background: var(--primary); margin-right: 10px; border-radius: 2px; }
+        
+        .dosage-display { 
+            color: var(--accent); font-weight: bold; font-size: 16px; margin-bottom: 12px; 
+            padding: 6px 12px; background: #fff5f5; display: inline-block; border-radius: 6px; border-left: 4px solid var(--accent);
+        }
+        .drug-text { font-size: 14.5px; line-height: 1.7; color: #4a5568; white-space: pre-wrap; text-align: justify; }
+        
+        .drug-qr-box { width: 110px; text-align: center; flex-shrink: 0; background: #fafbfc; border-radius: 8px; padding: 10px; }
+        .drug-qr-box img { width: 90px; height: 90px; mix-blend-mode: multiply; }
+        .qr-hint { font-size: 11px; color: #a0aec0; margin-top: 8px; font-weight: 500; }
+
+        .footer { position: absolute; bottom: 15mm; left: 15mm; right: 15mm; border-top: 1px solid #e2e8f0; padding-top: 15px; font-size: 12px; color: #718096; }
+        .sign-area { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; }
+        .sign-dept { font-weight: bold; font-size: 15px; color: #2d3748; line-height: 1.4; text-align: right; }
+
+        /* 打印适配 */
+        @media print {
+            .no-print-area { display: none; }
+            .preview-container { margin: 0; padding: 0; width: 100%; }
+            .a4-page { margin: 0; box-shadow: none; width: 210mm; min-height: 297mm; padding: 15mm; }
+            body { background: white; }
+            .drug-row { border: 1px solid #eee; }
+            @page { size: A4; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print-area">
+    <h3>🏥 宣教录入工作台</h3>
+    
+    <div class="form-section">
+        <label>第一步：填写患者基本信息</label>
+        <input type="text" id="p-name" placeholder="患者姓名" oninput="draw()">
+        <div style="margin-top:10px;"></div>
+        <input type="text" id="p-bed" placeholder="床号 / 住院号" oninput="draw()">
+        <div style="margin-top:10px;"></div>
+        <input type="text" id="p-diag" placeholder="临床诊断 (如：下肢静脉曲张)" oninput="draw()">
+    </div>
+
+    <div class="form-section">
+        <label>第二步：勾选药品并核对剂量</label>
+        <div id="selector"></div>
+    </div>
+
+    <button class="btn-print" onclick="window.print()">✨ 生成并打印指导单</button>
+</div>
+
+<div class="preview-container">
+    <div class="a4-page" id="main-content">
+        <div class="header-box">
+            <img src="hospital_logo.png" class="hospital-logo" alt="甘肃省妇幼保健院 Logo">
+            <div class="hospital-name">甘肃省妇幼保健院（甘肃省中心医院）</div>
+            <div class="doc-title">患者用药教育指导单</div>
+        </div>
+
+        <div class="patient-bar">
+            <span>姓名：<span id="v-name">——</span></span>
+            <span>床号：<span id="v-bed">——</span></span>
+            <span>诊断：<span id="v-diag">——</span></span>
+        </div>
+
+        <div id="v-content">
+            <div style="text-align:center; color:#cbd5e0; margin-top:120px;">
+                <p style="font-size: 48px; margin:0;">📝</p>
+                <p style="font-size: 18px;">请在左侧工作台开始录入数据</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><b>温馨提示：</b>请严格遵医嘱服药，不可擅自停药或更改剂量。扫码可查阅该药物的视听化教育资料。若服药期间出现皮疹、剧烈头痛、黑便、血尿或牙龈出血不止，请立即告知医生或就医。</p>
+            <div class="sign-area">
+                <span id="print-date">打印日期：2026年1月30日</span>
+                <div class="sign-dept">
+                    介入与血管外科<br>
+                    药学部
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 药品数据库
+    const drugDb = [
+        { id: "riv", name: "利伐沙班片", qr: "qr_rivaroxaban.png", info: "【指导】：建议每日固定时间服用。注意监测是否有牙龈出血、皮肤青紫瘀斑或柏油样黑便。围手术期停药请务必咨询主治医师。" },
+        { id: "asp", name: "阿司匹林肠溶片", qr: "qr_aspirin.png", info: "【指导】：建议餐前30分钟整片吞服，减少对胃粘膜刺激。注意观察是否有胃痛、牙龈出血。如有手术计划请提前5-7天告知医生。" },
+        { id: "clo", name: "硫酸氢氯吡格雷片", qr: "qr_clopidogrel.png", info: "【指导】：每日固定时间服用一次。作为抗血小板药物，请注意预防磕碰，观察皮下是否有出血点。不要擅自联用其他消炎止痛药。" },
+        { id: "ros", name: "瑞舒伐他汀钙片", qr: "qr_rosuvastatin.png", info: "【指导】：建议晚间服用效果更佳。若用药期间出现不明原因的肌肉疼痛、乏力或尿液颜色加深，请及时就诊检查肝功与肌酸激酶。" },
+        { id: "ven", name: "迈之灵片", qr: "qr_venostat.png", info: "【指导】：建议饭后服用。主要用于改善静脉曲张、慢性静脉功能不全引起的水肿、皮炎、疼痛等症状。" },
+        { id: "ber", name: "贝前列素钠片", qr: "qr_beraprost.png", info: "【指导】：餐后服用。改善慢性动脉闭塞性疾病引起的肢体溃疡与疼痛。少数患者初用可能出现面部潮红或头痛。" },
+        { id: "nif", name: "硝苯地平控释片", qr: "qr_nifedipine.png", info: "【指导】：必须整片吞服，不可嚼碎或掰开！否则会导致血压波动过大。药片外壳不被吸收属于正常现象。" },
+        { id: "ato", name: "阿托伐他汀钙片", qr: "qr_atorvastatin.png", info: "【指导】：建议睡前服用。饮食应保持低脂低胆固醇。避免大量饮用西柚汁，以免增加药物副作用风险。" }
+    ];
+
+    function init() {
+        const box = document.getElementById('selector');
+        drugDb.forEach(d => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'drug-selector-item';
+            itemDiv.onclick = (e) => {
+                if(e.target.tagName !== 'INPUT') toggleDrug(d.id);
+            };
+            itemDiv.innerHTML = `
+                <div class="drug-checkbox">
+                    <input type="checkbox" id="check-${d.id}" style="width:20px; height:20px; margin-right:12px;">
+                    ${d.name}
+                </div>
+                <div class="dosage-input-wrapper" id="wrapper-${d.id}">
+                    <input type="text" class="dosage-input" id="dose-${d.id}" 
+                           placeholder="输入剂量（如：15mg qd）" oninput="draw()">
+                </div>
+            `;
+            box.appendChild(itemDiv);
+        });
+        
+        // 设置当前日期
+        const today = new Date();
+        document.getElementById('print-date').innerText = `打印日期：${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+    }
+
+    function toggleDrug(id) {
+        const check = document.getElementById('check-' + id);
+        const wrapper = document.getElementById('wrapper-' + id);
+        check.checked = !check.checked;
+        if(check.checked) {
+            wrapper.classList.add('active');
+        } else {
+            wrapper.classList.remove('active');
+            document.getElementById('dose-' + id).value = '';
+        }
+        draw();
+    }
+
+    function draw() {
+        // 同步基本信息
+        document.getElementById('v-name').innerText = document.getElementById('p-name').value || "——";
+        document.getElementById('v-bed').innerText = document.getElementById('p-bed').value || "——";
+        document.getElementById('v-diag').innerText = document.getElementById('p-diag').value || "——";
+        
+        const content = document.getElementById('v-content');
+        content.innerHTML = '';
+        
+        let hasSelection = false;
+        drugDb.forEach(d => {
+            if(document.getElementById('check-' + d.id).checked) {
+                hasSelection = true;
+                const dose = document.getElementById('dose-' + d.id).value;
+                const row = document.createElement('div');
+                row.className = 'drug-row';
+                row.innerHTML = `
+                    <div class="drug-info-text">
+                        <span class="drug-title">${d.name}</span>
+                        <div class="dosage-display">个性化用法：${dose || "遵医嘱执行"}</div>
+                        <div class="drug-text">${d.info}</div>
+                    </div>
+                    <div class="drug-qr-box">
+                        <img src="${d.qr}" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=药物教育详情'">
+                        <div class="qr-hint">扫码看详情</div>
+                    </div>
+                `;
+                content.appendChild(row);
+            }
+        });
+        if(!hasSelection) {
+            content.innerHTML = '<div style="text-align:center; color:#cbd5e0; margin-top:120px;"><p style="font-size: 48px; margin:0;">📝</p><p style="font-size: 18px;">请在左侧工作台开始录入数据</p></div>';
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
