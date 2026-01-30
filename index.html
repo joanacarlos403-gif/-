@@ -247,67 +247,9 @@
         });
         if(!hasSelection) {
             content.innerHTML = '<div style="text-align:center; color:#cbd5e0; margin-top:120px;"><p style="font-size: 48px; margin:0;">📝</p><p style="font-size: 18px;">请在左侧工作台开始录入数据</p></div>';
-    // 1. 初始化页面时，检查网址里有没有带参数
-window.onload = function() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('name')) {
-        // 如果有参数，说明是“患者查看模式”，自动填充并隐藏控制台
-        document.getElementById('p-name').value = params.get('name');
-        document.getElementById('p-bed').value = params.get('bed');
-        document.getElementById('p-diag').value = params.get('diag');
-        
-        // 解析选中的药品信息（格式：drugId_dose|drugId_dose）
-        const selectedStr = params.get('drugs');
-        if (selectedStr) {
-            const drugList = selectedStr.split('|');
-            drugList.forEach(item => {
-                const [id, dose] = item.split('_');
-                const check = document.getElementById('check-' + id);
-                if (check) {
-                    check.checked = true;
-                    document.getElementById('wrapper-' + id).classList.add('active');
-                    document.getElementById('dose-' + id).value = decodeURIComponent(dose);
-                }
-            });
         }
-        draw();
-        // 隐藏药师操作面板
-        document.querySelector('.no-print-area').style.display = 'none';
-        document.querySelector('.preview-container').style.margin = '0 auto';
     }
-    init(); // 执行原有的初始化逻辑
-};
 
-// 2. 药师点击“生成分享二维码”的逻辑
-function generateShareQR() {
-    const overlay = document.getElementById('qr-overlay');
-    overlay.style.display = 'flex';
-
-    // 提取当前填写的核心数据
-    const name = document.getElementById('p-name').value;
-    const bed = document.getElementById('p-bed').value;
-    const diag = document.getElementById('p-diag').value;
-    
-    let drugParams = [];
-    drugDb.forEach(d => {
-        const check = document.getElementById('check-' + d.id);
-        if (check && check.checked) {
-            const dose = document.getElementById('dose-' + d.id).value;
-            drugParams.push(`${d.id}_${encodeURIComponent(dose)}`);
-        }
-    });
-
-    // 拼接成完整的带参数网址
-    const baseUrl = window.location.origin + window.location.pathname;
-    const shareUrl = `${baseUrl}?name=${encodeURIComponent(name)}&bed=${encodeURIComponent(bed)}&diag=${encodeURIComponent(diag)}&drugs=${drugParams.join('|')}`;
-
-    // 生成二维码
-    new QRious({
-        element: document.getElementById('share-qr'),
-        value: shareUrl,
-        size: 280
-    });
-}
     init();
 </script>
 </body>
