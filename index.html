@@ -164,6 +164,89 @@
 </div>
 
 <script>
+    // 药品数据库
+    const drugDb = [
+        { id: "riv", name: "利伐沙班片", qr: "qr_rivaroxaban.png", info: "【指导】：建议每日固定时间服用。注意监测是否有牙龈出血、皮肤青紫瘀斑或柏油样黑便。围手术期停药请务必咨询主治医师。" },
+        { id: "asp", name: "阿司匹林肠溶片", qr: "qr_aspirin.png", info: "【指导】：建议餐前30分钟整片吞服，减少对胃粘膜刺激。注意观察是否有胃痛、牙龈出血。如有手术计划请提前5-7天告知医生。" },
+        { id: "clo", name: "硫酸氢氯吡格雷片", qr: "qr_clopidogrel.png", info: "【指导】：每日固定时间服用一次。作为抗血小板药物，请注意预防磕碰，观察皮下是否有出血点。不要擅自联用其他消炎止痛药。" },
+        { id: "ros", name: "瑞舒伐他汀钙片", qr: "qr_rosuvastatin.png", info: "【指导】：建议晚间服用效果更佳。若用药期间出现不明原因的肌肉疼痛、乏力或尿液颜色加深，请及时就诊检查肝功与肌酸激酶。" },
+        { id: "ven", name: "迈之灵片", qr: "qr_venostat.png", info: "【指导】：建议饭后服用。主要用于改善静脉曲张、慢性静脉功能不全引起的水肿、皮炎、疼痛等症状。" },
+        { id: "ber", name: "贝前列素钠片", qr: "qr_beraprost.png", info: "【指导】：餐后服用。改善慢性动脉闭塞性疾病引起的肢体溃疡与疼痛。少数患者初用可能出现面部潮红或头痛。" },
+        { id: "nif", name: "硝苯地平控释片", qr: "qr_nifedipine.png", info: "【指导】：必须整片吞服，不可嚼碎或掰开！否则会导致血压波动过大。药片外壳不被吸收属于正常现象。" },
+        { id: "ato", name: "阿托伐他汀钙片", qr: "qr_atorvastatin.png", info: "【指导】：建议睡前服用。饮食应保持低脂低胆固醇。避免大量饮用西柚汁，以免增加药物副作用风险。" }
+    ];
+
+    function init() {
+        const box = document.getElementById('selector');
+        drugDb.forEach(d => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'drug-selector-item';
+            itemDiv.onclick = (e) => {
+                if(e.target.tagName !== 'INPUT') toggleDrug(d.id);
+            };
+            itemDiv.innerHTML = `
+                <div class="drug-checkbox">
+                    <input type="checkbox" id="check-${d.id}" style="width:20px; height:20px; margin-right:12px;">
+                    ${d.name}
+                </div>
+                <div class="dosage-input-wrapper" id="wrapper-${d.id}">
+                    <input type="text" class="dosage-input" id="dose-${d.id}" 
+                           placeholder="输入剂量（如：15mg qd）" oninput="draw()">
+                </div>
+            `;
+            box.appendChild(itemDiv);
+        });
+        
+        // 设置当前日期
+        const today = new Date();
+        document.getElementById('print-date').innerText = `打印日期：${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+    }
+
+    function toggleDrug(id) {
+        const check = document.getElementById('check-' + id);
+        const wrapper = document.getElementById('wrapper-' + id);
+        check.checked = !check.checked;
+        if(check.checked) {
+            wrapper.classList.add('active');
+        } else {
+            wrapper.classList.remove('active');
+            document.getElementById('dose-' + id).value = '';
+        }
+        draw();
+    }
+
+    function draw() {
+        // 同步基本信息
+        document.getElementById('v-name').innerText = document.getElementById('p-name').value || "——";
+        document.getElementById('v-bed').innerText = document.getElementById('p-bed').value || "——";
+        document.getElementById('v-diag').innerText = document.getElementById('p-diag').value || "——";
+        
+        const content = document.getElementById('v-content');
+        content.innerHTML = '';
+        
+        let hasSelection = false;
+        drugDb.forEach(d => {
+            if(document.getElementById('check-' + d.id).checked) {
+                hasSelection = true;
+                const dose = document.getElementById('dose-' + d.id).value;
+                const row = document.createElement('div');
+                row.className = 'drug-row';
+                row.innerHTML = `
+                    <div class="drug-info-text">
+                        <span class="drug-title">${d.name}</span>
+                        <div class="dosage-display">个性化用法：${dose || "遵医嘱执行"}</div>
+                        <div class="drug-text">${d.info}</div>
+                    </div>
+                    <div class="drug-qr-box">
+                        <img src="${d.qr}" onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=药物教育详情'">
+                        <div class="qr-hint">扫码看详情</div>
+                    </div>
+                `;
+                content.appendChild(row);
+            }
+        });
+        if(!hasSelection) {
+            content.innerHTML = '<div style="text-align:center; color:#cbd5e0; margin-top:120px;"><p style="font-size: 48px; margin:0;">📝</p><p style="font-size: 18px;">请在左侧工作台开始录入数据</p></div>';
     // 1. 初始化页面时，检查网址里有没有带参数
 window.onload = function() {
     const params = new URLSearchParams(window.location.search);
