@@ -217,7 +217,29 @@
         new QRious({ element: document.getElementById('share-qr'), value: shareUrl, size: 250, level: 'H' });
     }
 
-    init();
+    function init() {
+    // 1. 先渲染基本的药物选择器，保证页面不白屏
+    const box = document.getElementById('selector');
+    if(box) {
+        box.innerHTML = ''; // 清空旧内容
+        drugDb.forEach(d => {
+            // ... 你的渲染代码 ...
+        });
+    }
+
+    // 2. 再尝试解析 URL 参数
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('name')) {
+            // 执行自动填充逻辑...
+        }
+    } catch (e) {
+        console.log("参数解析失败，进入普通录入模式");
+    }
+    
+    // 3. 最后执行一次 draw 确保界面更新
+    draw();
+}
 </script>
 </body>
 </html>
